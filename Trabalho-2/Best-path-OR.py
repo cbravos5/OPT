@@ -148,18 +148,6 @@ def Bound_func1(matrix_time,matrix_dependency,act_path,visited):
 #########################################################################
 
 #########################################################################
-#classe para aguardar a matriz reduzida de cada nodo
-#e o custo correspondente para aquele caminho
-class Reduce:
-    def __init__(self,cost):
-        self.cost = cost
-        self.red_matrix = []
-
-    def set_red_matrix(self,reduced_matrix):
-        self.red_matrix = copy.deepcopy(reduced_matrix)
-#########################################################################
-
-#########################################################################
 #funcao para reduzir as colunas de uma matriz
 def Min_column(matrix_time,i):
     fst = inf 
@@ -170,18 +158,6 @@ def Min_column(matrix_time,i):
             fst = matrix_time[j][i]
 
     return fst
-#########################################################################
-
-#########################################################################
-#funcao que inicializa um array do tipo Class Reduce que sera utilizado
-#ao longo das recursoes
-def Init_reduced_array(cost,matrix_time):
-    reduced = []
-    reduced.append(Reduce(cost))
-    reduced[0].set_red_matrix(matrix_time)
-    for i in range(1,n):
-        reduced.append(Reduce(0))
-    return reduced
 #########################################################################
 
 #########################################################################
@@ -224,7 +200,7 @@ def Set_infinity(matrix_time,i,j):
 # a ordem em que os nodos foram percorridos ate o momento(act_path)
 # quais nodos ja foram visitados(visited)
 # e uma lista de matrizes reduzidas ja inicializadas
-def BP_OR2(matrix_time,matrix_dependency,cost,lvl,visited,act_path,reduced_matrixes):
+def BP_OR2(matrix_time,matrix_dependency,cost,lvl,visited,act_path):
     global opt_time
     global nodes
     nodes += 1
@@ -239,28 +215,29 @@ def BP_OR2(matrix_time,matrix_dependency,cost,lvl,visited,act_path,reduced_matri
 
     #Calculada a matriz reduzida para todo proximo nodo possivel
     #se o custo for menor que o menor tempo entao avanca para proximo nodo
+    red_matrix_act = []
+    cost_act = 0
     for i in range(n):
 
         if (visited[i] == False and dep_check(matrix_dependency,i) == False):
-            reduced_matrixes[i].red_matrix = Set_infinity(copy.deepcopy(matrix_time),act_path[lvl-1],i)
-            reduced_matrixes[i].cost = Get_reduced_cost(reduced_matrixes[i].red_matrix)
-            reduced_matrixes[i].cost += cost + matrix_time[act_path[lvl-1]][i]
+            red_matrix_act = Set_infinity(copy.deepcopy(matrix_time),act_path[lvl-1],i)
+            cost_act = Get_reduced_cost(red_matrix_act)
+            cost_act += cost + matrix_time[act_path[lvl-1]][i]
             #print(reduced_matrixes[i].cost)
 
-            if (reduced_matrixes[i].cost < opt_time):
+            if (cost_act < opt_time):
                 new_dep = copy.deepcopy(matrix_dependency)
                 setDepNone(new_dep,i)
                 act_path[lvl] = i 
                 visited[i] = True
-                #print(i)
-                #print(act_path)
-                #print(visited)
-                BP_OR2(reduced_matrixes[i].red_matrix,new_dep,reduced_matrixes[i].cost,
-                        lvl+1,visited,act_path,copy.deepcopy(reduced_matrixes))
+                BP_OR2(red_matrix_act,new_dep,cost_act,
+                        lvl+1,visited,act_path)
                 visited = [False] * len(visited) 
                 for j in range(lvl): 
                     if act_path[j] != -1: 
                         visited[act_path[j]] = True
+            red_matrix_act = []
+            cost_act = 0
 #########################################################################
 
 #########################################################################
@@ -275,9 +252,8 @@ def Bound_func2(matrix_time,matrix_dependency,act_path,visited):
                 matrix_time[i][j] = inf
 
     cost = Get_reduced_cost(matrix_time)
-    reduced_matrixes = Init_reduced_array(cost,matrix_time)
     start = int(round(time.time() * 1000))
-    BP_OR2(matrix_time,matrix_dependency,cost,1,visited,act_path,reduced_matrixes)
+    BP_OR2(matrix_time,matrix_dependency,cost,1,visited,act_path)
     end = int(round(time.time() * 1000))
 
 #########################################################################
